@@ -4,7 +4,6 @@ use std::path::PathBuf;
 
 use crate::models::{Session, UserProfile};
 
-/// db file path
 fn db_path() -> PathBuf {
     let data_dir = dirs::data_dir()
         .unwrap_or_else(|| PathBuf::from("."))
@@ -13,7 +12,6 @@ fn db_path() -> PathBuf {
     data_dir.join("ferris_focus.db")
 }
 
-/// open db + init tables
 pub fn init_db() -> Result<Connection> {
     let conn = Connection::open(db_path())?;
 
@@ -45,7 +43,6 @@ pub fn init_db() -> Result<Connection> {
     Ok(conn)
 }
 
-/// save session
 pub fn save_session(conn: &Connection, session: &Session) -> Result<()> {
     conn.execute(
         "INSERT INTO sessions (started_at, completed_at, duration_secs, session_type, completed)
@@ -61,7 +58,6 @@ pub fn save_session(conn: &Connection, session: &Session) -> Result<()> {
     Ok(())
 }
 
-/// load profile
 pub fn get_profile(conn: &Connection) -> Result<UserProfile> {
     conn.query_row(
         "SELECT total_xp, level, current_streak, longest_streak, last_session_date FROM user_profile WHERE id = 1",
@@ -80,7 +76,6 @@ pub fn get_profile(conn: &Connection) -> Result<UserProfile> {
     )
 }
 
-/// save profile
 pub fn update_profile(conn: &Connection, profile: &UserProfile) -> Result<()> {
     let last_date_str = profile.last_session_date.map(|d| d.format("%Y-%m-%d").to_string());
     conn.execute(
@@ -96,7 +91,6 @@ pub fn update_profile(conn: &Connection, profile: &UserProfile) -> Result<()> {
     Ok(())
 }
 
-/// today's completed focus count
 pub fn get_today_session_count(conn: &Connection, today: &str) -> Result<u32> {
     conn.query_row(
         "SELECT COUNT(*) FROM sessions WHERE session_type = 'focus' AND completed = 1 AND started_at LIKE ?1",
@@ -105,7 +99,6 @@ pub fn get_today_session_count(conn: &Connection, today: &str) -> Result<u32> {
     )
 }
 
-/// sessions in range, grouped by date
 pub fn get_sessions_in_range(
     conn: &Connection,
     start: &str,
@@ -132,7 +125,6 @@ pub fn get_sessions_in_range(
     Ok(results)
 }
 
-/// total sessions + total focus secs
 pub fn get_total_stats(conn: &Connection) -> Result<(u32, u32)> {
     conn.query_row(
         "SELECT COUNT(*), COALESCE(SUM(duration_secs), 0) FROM sessions WHERE session_type = 'focus' AND completed = 1",

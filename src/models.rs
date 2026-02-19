@@ -1,7 +1,6 @@
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
-/// session type
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SessionType {
     Focus,
@@ -36,7 +35,6 @@ impl SessionType {
     }
 }
 
-/// recorded session
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Session {
     pub id: Option<i64>,
@@ -47,7 +45,6 @@ pub struct Session {
     pub completed: bool,
 }
 
-/// xp + streak profile
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserProfile {
     pub total_xp: u32,
@@ -69,7 +66,6 @@ impl Default for UserProfile {
     }
 }
 
-/// ferris evolution stage
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FerrisStage {
     Egg,
@@ -101,7 +97,6 @@ impl FerrisStage {
     }
 }
 
-// durations in secs
 pub const FOCUS_DURATION_SECS: u32 = 25 * 60;
 pub const SHORT_BREAK_SECS: u32 = 5 * 60;
 pub const LONG_BREAK_SECS: u32 = 15 * 60;

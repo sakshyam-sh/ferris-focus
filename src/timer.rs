@@ -1,6 +1,5 @@
 use crate::models::{SessionType, FOCUS_DURATION_SECS, LONG_BREAK_SECS, SHORT_BREAK_SECS, SESSIONS_BEFORE_LONG_BREAK};
 
-/// timer state
 #[derive(Debug, Clone)]
 pub enum TimerState {
     Idle,
@@ -17,7 +16,6 @@ pub enum TimerState {
     },
 }
 
-/// timer engine, pure state machine
 #[derive(Debug, Clone)]
 pub struct Timer {
     pub state: TimerState,
@@ -32,7 +30,6 @@ impl Timer {
         }
     }
 
-    /// start session of given type
     pub fn start(&mut self, session_type: SessionType) {
         let duration = match session_type {
             SessionType::Focus => FOCUS_DURATION_SECS,
@@ -45,13 +42,11 @@ impl Timer {
         };
     }
 
-    /// auto-start next session
     pub fn start_next(&mut self) {
         let next_type = self.next_session_type();
         self.start(next_type);
     }
 
-    /// next session type to run
     pub fn next_session_type(&self) -> SessionType {
         match &self.state {
             TimerState::Finished { session_type } => match session_type {
@@ -70,7 +65,7 @@ impl Timer {
         }
     }
 
-    /// tick 1s, returns true if finished
+    /// returns true if session just finished
     pub fn tick(&mut self) -> bool {
         if let TimerState::Running {
             remaining_secs,
@@ -93,7 +88,6 @@ impl Timer {
         false
     }
 
-    /// pause if running
     pub fn pause(&mut self) {
         if let TimerState::Running {
             remaining_secs,
@@ -107,7 +101,6 @@ impl Timer {
         }
     }
 
-    /// resume if paused
     pub fn resume(&mut self) {
         if let TimerState::Paused {
             remaining_secs,
@@ -121,12 +114,10 @@ impl Timer {
         }
     }
 
-    /// reset to idle
     pub fn reset(&mut self) {
         self.state = TimerState::Idle;
     }
 
-    /// remaining as (min, sec)
     pub fn remaining_display(&self) -> (u32, u32) {
         let secs = match &self.state {
             TimerState::Running { remaining_secs, .. } => *remaining_secs,
@@ -136,7 +127,6 @@ impl Timer {
         (secs / 60, secs % 60)
     }
 
-    /// total session duration in secs
     pub fn total_duration_secs(&self) -> u32 {
         let session_type = match &self.state {
             TimerState::Running { session_type, .. } => Some(session_type),
@@ -151,7 +141,7 @@ impl Timer {
         }
     }
 
-    /// elapsed fraction 0.0..1.0
+    /// 0.0..1.0 elapsed fraction
     pub fn progress(&self) -> f32 {
         let remaining = match &self.state {
             TimerState::Running { remaining_secs, .. } => *remaining_secs,
@@ -166,7 +156,6 @@ impl Timer {
         1.0 - (remaining as f32 / total as f32)
     }
 
-    /// current session type if any
     pub fn current_session_type(&self) -> Option<SessionType> {
         match &self.state {
             TimerState::Running { session_type, .. } => Some(*session_type),
@@ -176,17 +165,14 @@ impl Timer {
         }
     }
 
-    /// is running?
     pub fn is_running(&self) -> bool {
         matches!(self.state, TimerState::Running { .. })
     }
 
-    /// is paused?
     pub fn is_paused(&self) -> bool {
         matches!(self.state, TimerState::Paused { .. })
     }
 
-    /// is finished?
     pub fn is_finished(&self) -> bool {
         matches!(self.state, TimerState::Finished { .. })
     }

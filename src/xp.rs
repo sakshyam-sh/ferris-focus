@@ -2,32 +2,25 @@ use chrono::NaiveDate;
 
 use crate::models::FerrisStage;
 
-// base xp per session
 const BASE_XP: u32 = 100;
-// bonus per streak day
 const STREAK_BONUS_PER_DAY: u32 = 10;
-// max streak bonus
 const MAX_STREAK_BONUS: u32 = 200;
-// xp per level
 const XP_PER_LEVEL: u32 = 500;
 
-/// xp earned for a session w/ streak bonus
 pub fn calculate_xp(current_streak: u32) -> u32 {
     let bonus = (current_streak * STREAK_BONUS_PER_DAY).min(MAX_STREAK_BONUS);
     BASE_XP + bonus
 }
 
-/// level from total xp
 pub fn calculate_level(total_xp: u32) -> u32 {
     (total_xp / XP_PER_LEVEL) + 1
 }
 
-/// xp needed for next level
 pub fn xp_for_next_level(level: u32) -> u32 {
     level * XP_PER_LEVEL
 }
 
-/// progress within current level 0.0..1.0
+/// 0.0..1.0 progress within current level
 pub fn level_progress(total_xp: u32) -> f32 {
     let level = calculate_level(total_xp);
     let xp_at_current_level = (level - 1) * XP_PER_LEVEL;
@@ -35,7 +28,6 @@ pub fn level_progress(total_xp: u32) -> f32 {
     xp_in_level as f32 / XP_PER_LEVEL as f32
 }
 
-/// level -> ferris stage
 pub fn ferris_stage(level: u32) -> FerrisStage {
     match level {
         1 => FerrisStage::Egg,
@@ -46,7 +38,6 @@ pub fn ferris_stage(level: u32) -> FerrisStage {
     }
 }
 
-/// update streak, returns new value
 pub fn update_streak(last_session_date: Option<NaiveDate>, today: NaiveDate, current_streak: u32) -> u32 {
     match last_session_date {
         None => 1, // first session

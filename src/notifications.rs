@@ -1,6 +1,5 @@
 use crate::models::SessionType;
 
-/// send desktop notif on session complete
 pub fn notify_session_complete(session_type: SessionType, xp_earned: Option<u32>) {
     let (title, body) = match session_type {
         SessionType::Focus => {

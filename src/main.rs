@@ -26,14 +26,12 @@ fn main() -> iced::Result {
         .run()
 }
 
-/// active screen
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum View {
     Timer,
     Stats,
 }
 
-/// app messages
 #[derive(Debug, Clone)]
 enum Message {
     Tick,
@@ -43,7 +41,6 @@ enum Message {
     SwitchView(View),
 }
 
-/// app state
 struct App {
     timer: Timer,
     profile: UserProfile,
@@ -504,7 +501,6 @@ fn view_nav(app: &App) -> Element<'_, Message> {
 
 // -- canvas widgets --
 
-/// circular timer + progress ring
 struct TimerWidget<'a> {
     progress: f32,
     remaining: (u32, u32),
@@ -533,7 +529,6 @@ impl<'a> canvas::Program<Message> for TimerWidget<'a> {
 
                     let palette = theme.palette();
 
-                    // bg circle
                     let bg_circle = Path::circle(center, radius);
                     frame.stroke(
                         &bg_circle,
@@ -543,7 +538,6 @@ impl<'a> canvas::Program<Message> for TimerWidget<'a> {
                         }),
                     );
 
-                    // progress arc
                     if !self.is_idle {
                         let progress_color = if self.is_finished {
                             Color::from_rgb(0.4, 0.9, 0.4)
@@ -577,7 +571,6 @@ impl<'a> canvas::Program<Message> for TimerWidget<'a> {
                         }
                     }
 
-                    // time text
                     let time_str = if self.is_idle {
                         "25:00".to_string()
                     } else if self.is_finished {
@@ -596,7 +589,6 @@ impl<'a> canvas::Program<Message> for TimerWidget<'a> {
                         ..canvas::Text::default()
                     });
 
-                    // label
                     frame.fill_text(canvas::Text {
                         content: self.session_label.to_string(),
                         position: iced::Point::new(center.x, center.y + 25.0),
@@ -615,7 +607,6 @@ impl<'a> canvas::Program<Message> for TimerWidget<'a> {
     }
 }
 
-/// horizontal progress bar
 struct ProgressBarWidget {
     progress: f32,
 }
@@ -636,7 +627,6 @@ impl canvas::Program<Message> for ProgressBarWidget {
 
         let bar_height = bounds.height;
 
-        // bg
         let bg = Path::rectangle(
             iced::Point::ORIGIN,
             iced::Size::new(bounds.width, bar_height),
@@ -649,7 +639,6 @@ impl canvas::Program<Message> for ProgressBarWidget {
             },
         );
 
-        // fill
         let fill_width = bounds.width * self.progress;
         if fill_width > 0.0 {
             let fill = Path::rectangle(
@@ -663,7 +652,6 @@ impl canvas::Program<Message> for ProgressBarWidget {
     }
 }
 
-/// single heatmap cell
 struct HeatmapCell {
     count: u32,
 }

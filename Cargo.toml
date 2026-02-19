@@ -3,6 +3,12 @@ name = "ferris-focus"
 version = "0.1.0"
 edition = "2024"
 description = "A lightweight, gamified Pomodoro timer with Focus Streaks & XP"
+license = "MIT"
+authors = ["sakshyam-sh"]
+repository = "https://github.com/sakshyam-sh/ferris-focus"
+readme = "README.md"
+keywords = ["pomodoro", "timer", "productivity", "gamification"]
+categories = ["gui"]
 
 [dependencies]
 iced = { version = "0.14", features = ["canvas", "tokio"] }
@@ -13,3 +19,17 @@ chrono = { version = "0.4", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 dirs = "6"
+
+[profile.release]
+lto = true
+strip = true
+codegen-units = 1
+
+[package.metadata.deb]
+maintainer = "sakshyam-sh"
+section = "utils"
+priority = "optional"
+assets = [
+    ["target/release/ferris-focus", "usr/bin/", "755"],
+    ["README.md", "usr/share/doc/ferris-focus/", "644"],
+]
