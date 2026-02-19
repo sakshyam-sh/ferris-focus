@@ -15,17 +15,26 @@ A lightweight, gamified Pomodoro timer built in Rust with Iced.
 
 ### From binary (easiest)
 
-Download the latest binary from [Releases](https://github.com/sakshyam-sh/ferris-focus/releases), then:
+Download the latest binary for your platform from [Releases](https://github.com/sakshyam-sh/ferris-focus/releases):
 
+| Platform | File |
+|---|---|
+| Linux | `ferris-focus-linux` |
+| macOS (Apple Silicon) | `ferris-focus-macos` |
+| Windows | `ferris-focus.exe` |
+| Debian/Ubuntu | `ferris-focus_0.1.0-1_amd64.deb` |
+
+**Linux / macOS:**
 ```bash
-chmod +x ferris-focus
-./ferris-focus
+chmod +x ferris-focus-linux   # or ferris-focus-macos
+./ferris-focus-linux
 ```
 
-### From .deb package (Debian/Ubuntu)
+**Windows:** just double-click `ferris-focus.exe`.
 
+**Debian/Ubuntu:**
 ```bash
-sudo dpkg -i ferris-focus_0.1.0_amd64.deb
+sudo dpkg -i ferris-focus_0.1.0-1_amd64.deb
 ferris-focus
 ```
 
