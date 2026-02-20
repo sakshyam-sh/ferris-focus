@@ -1,4 +1,6 @@
-use crate::models::{SessionType, FOCUS_DURATION_SECS, LONG_BREAK_SECS, SHORT_BREAK_SECS, SESSIONS_BEFORE_LONG_BREAK};
+use crate::models::{
+    SessionType, FOCUS_DURATION_SECS, LONG_BREAK_SECS, SESSIONS_BEFORE_LONG_BREAK, SHORT_BREAK_SECS,
+};
 
 #[derive(Debug, Clone)]
 pub enum TimerState {

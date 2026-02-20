@@ -1,4 +1,23 @@
-use crate::models::SessionType;
+use crate::models::{FerrisStage, SessionType};
+
+pub fn notify_level_up(new_level: u32, stage: FerrisStage) {
+    let title = format!("🎉 Level Up! Level {}", new_level);
+    let body = format!(
+        "Your Ferris has hatched into a {}! {}",
+        stage.label(),
+        stage.emoji()
+    );
+
+    if let Err(e) = notify_rust::Notification::new()
+        .summary(&title)
+        .body(&body)
+        .appname("Ferris Focus")
+        .timeout(8000)
+        .show()
+    {
+        eprintln!("Failed to send level-up notification: {}", e);
+    }
+}
 
 pub fn notify_session_complete(session_type: SessionType, xp_earned: Option<u32>) {
     let (title, body) = match session_type {

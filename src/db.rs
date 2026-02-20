@@ -1,5 +1,5 @@
 use chrono::NaiveDate;
-use rusqlite::{Connection, Result, params};
+use rusqlite::{params, Connection, Result};
 use std::path::PathBuf;
 
 use crate::models::{Session, UserProfile};
@@ -77,7 +77,9 @@ pub fn get_profile(conn: &Connection) -> Result<UserProfile> {
 }
 
 pub fn update_profile(conn: &Connection, profile: &UserProfile) -> Result<()> {
-    let last_date_str = profile.last_session_date.map(|d| d.format("%Y-%m-%d").to_string());
+    let last_date_str = profile
+        .last_session_date
+        .map(|d| d.format("%Y-%m-%d").to_string());
     conn.execute(
         "UPDATE user_profile SET total_xp = ?1, level = ?2, current_streak = ?3, longest_streak = ?4, last_session_date = ?5 WHERE id = 1",
         params![
@@ -136,6 +138,7 @@ pub fn get_total_stats(conn: &Connection) -> Result<(u32, u32)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::SessionType;
     use rusqlite::Connection;
 
     fn in_memory_db() -> Connection {
@@ -199,7 +202,10 @@ mod tests {
         assert_eq!(loaded.total_xp, 500);
         assert_eq!(loaded.level, 2);
         assert_eq!(loaded.current_streak, 3);
-        assert_eq!(loaded.last_session_date, NaiveDate::from_ymd_opt(2026, 2, 19));
+        assert_eq!(
+            loaded.last_session_date,
+            NaiveDate::from_ymd_opt(2026, 2, 19)
+        );
     }
 
     #[test]

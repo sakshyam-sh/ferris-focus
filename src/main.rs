@@ -7,9 +7,10 @@ mod xp;
 use chrono::{Datelike, Local, NaiveDate};
 use iced::alignment;
 use iced::mouse;
-use iced::widget::canvas::{self, Cache, Canvas, Frame, Geometry, Path, Stroke};
+use iced::widget::canvas::{self, Canvas, Frame, Geometry, Path, Stroke};
+use iced::widget::mouse_area;
 use iced::widget::{button, column, container, row, rule, space, text};
-use iced::{Center, Color, Element, Fill, Subscription, Theme, time};
+use iced::{time, window, Center, Color, Element, Fill, Padding, Subscription, Task, Theme};
 use rusqlite::Connection;
 use std::time::Duration;
 
@@ -17,11 +18,17 @@ use models::{Session, SessionType, UserProfile, FOCUS_DURATION_SECS, SESSIONS_BE
 use timer::{Timer, TimerState};
 
 fn main() -> iced::Result {
+    let window_settings = window::Settings {
+        size: iced::Size::new(320.0, 540.0),
+        decorations: false,
+        ..Default::default()
+    };
+
     iced::application(App::default, update, view)
         .title("Ferris Focus")
         .theme(Theme::CatppuccinMocha)
         .subscription(subscription)
-        .window_size((420.0, 620.0))
+        .window(window_settings)
         .centered()
         .run()
 }
@@ -39,6 +46,11 @@ enum Message {
     PauseResume,
     Skip,
     SwitchView(View),
+    DismissLevelUp,
+    Minimize,
+    Close,
+    WindowReady(window::Id),
+    DragStart,
 }
 
 struct App {
@@ -51,7 +63,8 @@ struct App {
     total_sessions: u32,
     total_focus_secs: u32,
     weekly_data: Vec<(String, u32)>,
-    timer_cache: Cache,
+    level_up: Option<u32>,
+    window_id: Option<window::Id>,
 }
 
 impl Default for App {
@@ -89,19 +102,20 @@ impl Default for App {
             total_sessions,
             total_focus_secs,
             weekly_data,
-            timer_cache: Cache::new(),
+            level_up: None,
+            window_id: None,
         }
     }
 }
 
-fn update(app: &mut App, message: Message) {
+fn update(app: &mut App, message: Message) -> Task<Message> {
     match message {
         Message::Tick => {
             let finished = app.timer.tick();
-            app.timer_cache.clear();
             if finished {
                 on_session_complete(app);
             }
+            Task::none()
         }
         Message::Start => {
             let session_type = if app.timer.is_finished() {
@@ -110,9 +124,8 @@ fn update(app: &mut App, message: Message) {
                 SessionType::Focus
             };
             app.timer.start(session_type);
-            app.session_start_time =
-                Some(Local::now().format("%Y-%m-%dT%H:%M:%S").to_string());
-            app.timer_cache.clear();
+            app.session_start_time = Some(Local::now().format("%Y-%m-%dT%H:%M:%S").to_string());
+            Task::none()
         }
         Message::PauseResume => {
             if app.timer.is_running() {
@@ -120,19 +133,49 @@ fn update(app: &mut App, message: Message) {
             } else if app.timer.is_paused() {
                 app.timer.resume();
             }
-            app.timer_cache.clear();
+            Task::none()
         }
         Message::Skip => {
             if app.timer.is_running() || app.timer.is_paused() {
                 app.timer.reset();
                 app.session_start_time = None;
-                app.timer_cache.clear();
             }
+            Task::none()
         }
         Message::SwitchView(v) => {
             app.current_view = v;
             if v == View::Stats {
                 refresh_stats(app);
+            }
+            Task::none()
+        }
+        Message::DismissLevelUp => {
+            app.level_up = None;
+            Task::none()
+        }
+        Message::WindowReady(id) => {
+            app.window_id = Some(id);
+            Task::none()
+        }
+        Message::DragStart => {
+            if let Some(id) = app.window_id {
+                window::drag(id)
+            } else {
+                Task::none()
+            }
+        }
+        Message::Minimize => {
+            if let Some(id) = app.window_id {
+                window::minimize(id, true)
+            } else {
+                Task::none()
+            }
+        }
+        Message::Close => {
+            if let Some(id) = app.window_id {
+                window::close(id)
+            } else {
+                Task::none()
             }
         }
     }
@@ -148,6 +191,7 @@ fn on_session_complete(app: &mut App) {
     let completed_at = now.format("%Y-%m-%dT%H:%M:%S").to_string();
 
     let mut xp_earned = None;
+    let old_level = app.profile.level;
 
     if session_type == SessionType::Focus {
         let new_streak = xp::update_streak(
@@ -165,6 +209,12 @@ fn on_session_complete(app: &mut App) {
         app.profile.total_xp += xp;
         app.profile.level = xp::calculate_level(app.profile.total_xp);
         xp_earned = Some(xp);
+
+        if app.profile.level > old_level {
+            let new_stage = xp::ferris_stage(app.profile.level);
+            notifications::notify_level_up(app.profile.level, new_stage);
+            app.level_up = Some(app.profile.level);
+        }
 
         app.today_sessions += 1;
         app.total_sessions += 1;
@@ -199,8 +249,7 @@ fn refresh_stats(app: &mut App) {
         let week_start = (Local::now() - chrono::Duration::days(6))
             .format("%Y-%m-%d")
             .to_string();
-        app.weekly_data =
-            db::get_sessions_in_range(conn, &week_start, &today).unwrap_or_default();
+        app.weekly_data = db::get_sessions_in_range(conn, &week_start, &today).unwrap_or_default();
 
         if let Ok(p) = db::get_profile(conn) {
             app.profile = p;
@@ -209,14 +258,48 @@ fn refresh_stats(app: &mut App) {
 }
 
 fn subscription(app: &App) -> Subscription<Message> {
-    if app.timer.is_running() {
+    let timer_sub = if app.timer.is_running() {
         time::every(Duration::from_secs(1)).map(|_| Message::Tick)
     } else {
         Subscription::none()
-    }
+    };
+
+    let window_sub = if app.window_id.is_none() {
+        window::open_events().map(Message::WindowReady)
+    } else {
+        Subscription::none()
+    };
+
+    Subscription::batch(vec![timer_sub, window_sub])
+}
+
+fn view_titlebar(_app: &App) -> Element<'_, Message> {
+    let drag_area = mouse_area(
+        space::horizontal()
+            .width(iced::Length::Fill)
+            .height(iced::Length::Fill),
+    )
+    .on_press(Message::DragStart);
+
+    let minimize = mouse_area(text("─").size(20)).on_press(Message::Minimize);
+
+    let close = mouse_area(text("✕").size(18)).on_press(Message::Close);
+
+    row![
+        drag_area,
+        minimize,
+        space::horizontal().width(iced::Length::Fixed(12.0)),
+        close,
+    ]
+    .align_y(Center)
+    .padding(Padding::from([0u16, 8]))
+    .height(40)
+    .into()
 }
 
 fn view(app: &App) -> Element<'_, Message> {
+    let titlebar = view_titlebar(app);
+
     let content: Element<Message> = match app.current_view {
         View::Timer => view_timer(app),
         View::Stats => view_stats(app),
@@ -224,13 +307,49 @@ fn view(app: &App) -> Element<'_, Message> {
 
     let nav = view_nav(app);
 
-    let layout = column![content, space::vertical().height(8), nav,]
-        .padding(24)
+    let layout = column![titlebar, content, space::vertical().height(8), nav,]
+        .padding(Padding::from([0u16, 24]))
         .spacing(0)
         .width(Fill)
         .height(Fill);
 
-    container(layout).width(Fill).height(Fill).into()
+    let main_view = container(layout).width(Fill).height(Fill);
+
+    if let Some(level) = app.level_up {
+        let stage = xp::ferris_stage(level);
+        let prev_stage = xp::ferris_stage(level.saturating_sub(1));
+
+        let modal = column![
+            text("🎉 Level Up! 🎉").size(28),
+            space::vertical().height(20),
+            row![
+                text(format!("{}", prev_stage.emoji())).size(48),
+                text(" → ").size(32),
+                text(format!("{}", stage.emoji())).size(48),
+            ],
+            space::vertical().height(12),
+            text(format!("Level {}", level)).size(24),
+            space::vertical().height(8),
+            text(format!("{}", stage.label())).size(18),
+            space::vertical().height(24),
+            button(text("Continue").size(16))
+                .on_press(Message::DismissLevelUp)
+                .padding([12, 24])
+                .style(button::primary),
+        ]
+        .align_x(Center)
+        .spacing(0)
+        .padding(32);
+
+        let modal_container = container(modal)
+            .width(iced::Length::Fill)
+            .center_x(iced::Length::Fill)
+            .center_y(iced::Length::Fill);
+
+        column![main_view, modal_container].into()
+    } else {
+        main_view.into()
+    }
 }
 
 fn view_timer(app: &App) -> Element<'_, Message> {
@@ -252,7 +371,6 @@ fn view_timer(app: &App) -> Element<'_, Message> {
             .unwrap_or("READY"),
         is_idle: matches!(app.timer.state, TimerState::Idle),
         is_finished: app.timer.is_finished(),
-        cache: &app.timer_cache,
     })
     .width(220)
     .height(220);
@@ -270,12 +388,6 @@ fn view_timer(app: &App) -> Element<'_, Message> {
 
     let level_progress = xp::level_progress(app.profile.total_xp);
     let xp_bar = view_progress_bar(level_progress, 12.0);
-    let level_label = text(format!(
-        "Level {} → {}",
-        app.profile.level,
-        app.profile.level + 1
-    ))
-    .size(12);
 
     let session_count = app.timer.focus_sessions_completed % SESSIONS_BEFORE_LONG_BREAK;
     let session_info = text(format!(
@@ -294,7 +406,6 @@ fn view_timer(app: &App) -> Element<'_, Message> {
         streak_xp,
         space::vertical().height(6),
         xp_bar,
-        level_label,
         space::vertical().height(8),
         session_info,
     ]
@@ -383,8 +494,7 @@ fn view_stats(app: &App) -> Element<'_, Message> {
     .spacing(16)
     .align_y(Center);
 
-    let today_label =
-        text(format!("Today: {} focus sessions", app.today_sessions)).size(14);
+    let today_label = text(format!("Today: {} focus sessions", app.today_sessions)).size(14);
 
     let total_hours = app.total_focus_secs / 3600;
     let total_mins = (app.total_focus_secs % 3600) / 60;
@@ -507,7 +617,6 @@ struct TimerWidget<'a> {
     session_label: &'a str,
     is_idle: bool,
     is_finished: bool,
-    cache: &'a Cache,
 }
 
 impl<'a> canvas::Program<Message> for TimerWidget<'a> {
@@ -521,89 +630,83 @@ impl<'a> canvas::Program<Message> for TimerWidget<'a> {
         bounds: iced::Rectangle,
         _cursor: mouse::Cursor,
     ) -> Vec<Geometry> {
-        let geometry =
-            self.cache
-                .draw(renderer, bounds.size(), |frame: &mut Frame| {
-                    let center = frame.center();
-                    let radius = bounds.width.min(bounds.height) / 2.0 - 10.0;
+        let mut frame = Frame::new(renderer, bounds.size());
+        let center = frame.center();
+        let radius = bounds.width.min(bounds.height) / 2.0 - 10.0;
 
-                    let palette = theme.palette();
+        let palette = theme.palette();
 
-                    let bg_circle = Path::circle(center, radius);
-                    frame.stroke(
-                        &bg_circle,
-                        Stroke::default().with_width(8.0).with_color(Color {
-                            a: 0.15,
-                            ..palette.text
-                        }),
-                    );
+        let bg_circle = Path::circle(center, radius);
+        frame.stroke(
+            &bg_circle,
+            Stroke::default().with_width(8.0).with_color(Color {
+                a: 0.15,
+                ..palette.text
+            }),
+        );
 
-                    if !self.is_idle {
-                        let progress_color = if self.is_finished {
-                            Color::from_rgb(0.4, 0.9, 0.4)
-                        } else {
-                            palette.primary
-                        };
+        if !self.is_idle {
+            let progress_color = if self.is_finished {
+                Color::from_rgb(0.4, 0.9, 0.4)
+            } else {
+                palette.primary
+            };
 
-                        let start_angle = -std::f32::consts::FRAC_PI_2;
-                        let segments = 60;
-                        let steps = (segments as f32 * self.progress) as usize;
-                        if steps > 0 {
-                            let mut builder = canvas::path::Builder::new();
-                            for i in 0..=steps {
-                                let angle = start_angle
-                                    + (i as f32 / segments as f32) * std::f32::consts::TAU;
-                                let x = center.x + radius * angle.cos();
-                                let y = center.y + radius * angle.sin();
-                                if i == 0 {
-                                    builder.move_to(iced::Point::new(x, y));
-                                } else {
-                                    builder.line_to(iced::Point::new(x, y));
-                                }
-                            }
-                            let arc_path = builder.build();
-                            frame.stroke(
-                                &arc_path,
-                                Stroke::default()
-                                    .with_width(8.0)
-                                    .with_color(progress_color),
-                            );
-                        }
-                    }
-
-                    let time_str = if self.is_idle {
-                        "25:00".to_string()
-                    } else if self.is_finished {
-                        "Done!".to_string()
+            let start_angle = -std::f32::consts::FRAC_PI_2;
+            let segments = 60;
+            let steps = (segments as f32 * self.progress) as usize;
+            if steps > 0 {
+                let mut builder = canvas::path::Builder::new();
+                for i in 0..=steps {
+                    let angle = start_angle + (i as f32 / segments as f32) * std::f32::consts::TAU;
+                    let x = center.x + radius * angle.cos();
+                    let y = center.y + radius * angle.sin();
+                    if i == 0 {
+                        builder.move_to(iced::Point::new(x, y));
                     } else {
-                        format!("{:02}:{:02}", self.remaining.0, self.remaining.1)
-                    };
+                        builder.line_to(iced::Point::new(x, y));
+                    }
+                }
+                let arc_path = builder.build();
+                frame.stroke(
+                    &arc_path,
+                    Stroke::default().with_width(8.0).with_color(progress_color),
+                );
+            }
+        }
 
-                    frame.fill_text(canvas::Text {
-                        content: time_str,
-                        position: iced::Point::new(center.x, center.y - 10.0),
-                        color: palette.text,
-                        size: iced::Pixels(42.0),
-                        align_x: iced::alignment::Horizontal::Center.into(),
-                        align_y: alignment::Vertical::Center,
-                        ..canvas::Text::default()
-                    });
+        let time_str = if self.is_idle {
+            "25:00".to_string()
+        } else if self.is_finished {
+            "Done!".to_string()
+        } else {
+            format!("{:02}:{:02}", self.remaining.0, self.remaining.1)
+        };
 
-                    frame.fill_text(canvas::Text {
-                        content: self.session_label.to_string(),
-                        position: iced::Point::new(center.x, center.y + 25.0),
-                        color: Color {
-                            a: 0.6,
-                            ..palette.text
-                        },
-                        size: iced::Pixels(14.0),
-                        align_x: iced::alignment::Horizontal::Center.into(),
-                        align_y: alignment::Vertical::Center,
-                        ..canvas::Text::default()
-                    });
-                });
+        frame.fill_text(canvas::Text {
+            content: time_str,
+            position: iced::Point::new(center.x, center.y - 10.0),
+            color: palette.text,
+            size: iced::Pixels(42.0),
+            align_x: iced::alignment::Horizontal::Center.into(),
+            align_y: alignment::Vertical::Center,
+            ..canvas::Text::default()
+        });
 
-        vec![geometry]
+        frame.fill_text(canvas::Text {
+            content: self.session_label.to_string(),
+            position: iced::Point::new(center.x, center.y + 25.0),
+            color: Color {
+                a: 0.6,
+                ..palette.text
+            },
+            size: iced::Pixels(14.0),
+            align_x: iced::alignment::Horizontal::Center.into(),
+            align_y: alignment::Vertical::Center,
+            ..canvas::Text::default()
+        });
+
+        vec![frame.into_geometry()]
     }
 }
 
@@ -641,10 +744,8 @@ impl canvas::Program<Message> for ProgressBarWidget {
 
         let fill_width = bounds.width * self.progress;
         if fill_width > 0.0 {
-            let fill = Path::rectangle(
-                iced::Point::ORIGIN,
-                iced::Size::new(fill_width, bar_height),
-            );
+            let fill =
+                Path::rectangle(iced::Point::ORIGIN, iced::Size::new(fill_width, bar_height));
             frame.fill(&fill, palette.primary);
         }
 

@@ -38,15 +38,19 @@ pub fn ferris_stage(level: u32) -> FerrisStage {
     }
 }
 
-pub fn update_streak(last_session_date: Option<NaiveDate>, today: NaiveDate, current_streak: u32) -> u32 {
+pub fn update_streak(
+    last_session_date: Option<NaiveDate>,
+    today: NaiveDate,
+    current_streak: u32,
+) -> u32 {
     match last_session_date {
         None => 1, // first session
         Some(last_date) => {
             let diff = (today - last_date).num_days();
             match diff {
                 0 => current_streak.max(1), // same day
-                1 => current_streak + 1,     // consecutive
-                _ => 1,                      // missed, reset
+                1 => current_streak + 1,    // consecutive
+                _ => 1,                     // missed, reset
             }
         }
     }
