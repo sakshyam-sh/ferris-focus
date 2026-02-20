@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Ferris Focus
+Comment=A lightweight, gamified Pomodoro timer with Focus Streaks & XP
+Exec=ferris-focus
+Icon=ferris-focus
+Terminal=false
+Type=Application
+Categories=Utility;Clock;GTK;
+Keywords=pomodoro;timer;productivity;focus;

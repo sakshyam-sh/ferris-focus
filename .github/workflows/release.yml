@@ -68,14 +68,51 @@ jobs:
       - name: Build release
         run: cargo build --release
 
-      - name: Rename binary
-        run: cp target/release/ferris-focus target/release/ferris-focus-macos
+      - name: Create .app bundle
+        run: |
+          APP="Ferris Focus.app"
+          mkdir -p "$APP/Contents/MacOS"
+          mkdir -p "$APP/Contents/Resources"
+          cp target/release/ferris-focus "$APP/Contents/MacOS/"
+          cat > "$APP/Contents/Info.plist" << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleName</key>
+            <string>Ferris Focus</string>
+            <key>CFBundleDisplayName</key>
+            <string>Ferris Focus</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.sakshyam-sh.ferris-focus</string>
+            <key>CFBundleVersion</key>
+            <string>0.1.0</string>
+            <key>CFBundleShortVersionString</key>
+            <string>0.1.0</string>
+            <key>CFBundleExecutable</key>
+            <string>ferris-focus</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>NSHighResolutionCapable</key>
+            <true/>
+            <key>LSMinimumSystemVersion</key>
+            <string>11.0</string>
+          </dict>
+          </plist>
+          EOF
+
+      - name: Create .dmg
+        run: |
+          hdiutil create -volname "Ferris Focus" \
+            -srcfolder "Ferris Focus.app" \
+            -ov -format UDZO \
+            ferris-focus-macos.dmg
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: macos-artifacts
-          path: target/release/ferris-focus-macos
+          path: ferris-focus-macos.dmg
 
   release:
     needs: [build-linux, build-windows, build-macos]
@@ -106,6 +143,6 @@ jobs:
             linux/target/release/ferris-focus-linux
             linux/target/debian/*.deb
             windows/ferris-focus.exe
-            macos/ferris-focus-macos
+            macos/ferris-focus-macos.dmg
           generate_release_notes: true
 

@@ -32,4 +32,5 @@ priority = "optional"
 assets = [
     ["target/release/ferris-focus", "usr/bin/", "755"],
     ["README.md", "usr/share/doc/ferris-focus/", "644"],
+    ["ferris-focus.desktop", "usr/share/applications/", "644"],
 ]
