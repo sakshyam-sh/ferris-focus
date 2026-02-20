@@ -49,14 +49,20 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Install NSIS
+        run: choco install nsis -y
+
       - name: Build release
         run: cargo build --release
+
+      - name: Package Windows installer
+        run: cargo packager --release --bundles nsis
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: windows-artifacts
-          path: target/release/ferris-focus.exe
+          path: target/release/bundle/nsis/
 
   build-macos:
     runs-on: macos-latest
@@ -143,7 +149,7 @@ jobs:
           files: |
             linux/ferris-focus-linux
             linux/*.deb
-            windows/ferris-focus.exe
+            windows/*.exe
             macos/ferris-focus-macos.dmg
           generate_release_notes: true
 

@@ -1,6 +1,6 @@
 [package]
 name = "ferris-focus"
-version = "0.1.1"
+version = "0.1.0"
 edition = "2024"
 description = "A lightweight, gamified Pomodoro timer with Focus Streaks & XP"
 license = "MIT"
@@ -20,17 +20,23 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 dirs = "6"
 
+[dev-dependencies]
+cargo-packager = "0.11"
+
 [profile.release]
 lto = true
 strip = true
 codegen-units = 1
 
-[package.metadata.deb]
-maintainer = "sakshyam-sh"
-section = "utils"
-priority = "optional"
-assets = [
-    ["target/release/ferris-focus", "usr/bin/", "755"],
-    ["README.md", "usr/share/doc/ferris-focus/", "644"],
-    ["ferris-focus.desktop", "usr/share/applications/", "644"],
-]
+[package.metadata.packager]
+product-name = "Ferris Focus"
+identifier = "com.sakshyam.ferris-focus"
+copyright = "Copyright (c) 2025 sakshyam-sh"
+category = "Utility"
+short-description = "A gamified Pomodoro timer"
+long-description = "A lightweight, gamified Pomodoro timer with Focus Streaks & XP"
+publisher = "sakshyam-sh"
+
+[[package.metadata.packager.targets]]
+target = "nsis"
+

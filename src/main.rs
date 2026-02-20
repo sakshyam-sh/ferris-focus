@@ -1,3 +1,4 @@
+#![windows_subsystem = "windows"]
 mod db;
 mod models;
 mod notifications;
