@@ -33,10 +33,9 @@ product-name = "Ferris Focus"
 identifier = "com.sakshyam.ferris-focus"
 copyright = "Copyright (c) 2025 sakshyam-sh"
 category = "Utility"
-short-description = "A gamified Pomodoro timer"
+description = "A gamified Pomodoro timer"
 long-description = "A lightweight, gamified Pomodoro timer with Focus Streaks & XP"
 publisher = "sakshyam-sh"
 
-[[package.metadata.packager.targets]]
-target = "nsis"
+[package.metadata.packager.nsis]
 

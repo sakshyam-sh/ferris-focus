@@ -59,7 +59,7 @@ jobs:
         run: cargo build --release
 
       - name: Package Windows installer
-        run: cargo packager --release --bundles nsis
+        run: cargo packager --release --formats nsis
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
