@@ -52,6 +52,11 @@ jobs:
       - name: Install NSIS
         run: choco install nsis -y
 
+      - name: Add NSIS to PATH
+        run: |
+          NSIS_PATH="C:/Program Files/NSIS"
+          echo "$NSIS_PATH" >> $GITHUB_PATH
+
       - name: Install cargo-packager
         run: cargo install cargo-packager
 
