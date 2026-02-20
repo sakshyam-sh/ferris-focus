@@ -29,16 +29,17 @@ jobs:
       - name: Build .deb
         run: cargo deb --no-build
 
-      - name: Rename binary
-        run: cp target/release/ferris-focus target/release/ferris-focus-linux
+      - name: Stage artifacts
+        run: |
+          mkdir -p dist
+          cp target/release/ferris-focus dist/ferris-focus-linux
+          cp target/debian/*.deb dist/
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: linux-artifacts
-          path: |
-            target/release/ferris-focus-linux
-            target/debian/*.deb
+          path: dist/
 
   build-windows:
     runs-on: windows-latest
@@ -140,8 +141,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            linux/target/release/ferris-focus-linux
-            linux/target/debian/*.deb
+            linux/ferris-focus-linux
+            linux/*.deb
             windows/ferris-focus.exe
             macos/ferris-focus-macos.dmg
           generate_release_notes: true
