@@ -24,9 +24,9 @@ jobs:
         run: cargo build --release
 
       - name: Install cargo-packager
-        run: |
-          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install.sh | sh
-          cargo binstall cargo-packager -y
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-packager
 
       - name: Package Linux
         run: cargo packager --release --formats deb,appimage --no-build
@@ -58,9 +58,9 @@ jobs:
           echo "C:\Program Files (x86)\NSIS" >> $GITHUB_PATH
 
       - name: Install cargo-packager
-        run: |
-          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install.sh | sh
-          cargo binstall cargo-packager -y
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-packager
 
       - name: Build release
         run: cargo build --release
@@ -86,9 +86,9 @@ jobs:
         run: cargo build --release
 
       - name: Install cargo-packager
-        run: |
-          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install.sh | sh
-          cargo binstall cargo-packager -y
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-packager
 
       - name: Package macOS
         run: cargo packager --release --formats dmg --no-build
