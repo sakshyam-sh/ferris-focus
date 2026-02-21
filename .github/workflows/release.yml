@@ -18,16 +18,18 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install system deps
-        run: sudo apt-get update && sudo apt-get install -y libxkbcommon-dev libwayland-dev libasound2-dev pkg-config libdbus-1-dev
+        run: sudo apt-get update && sudo apt-get install -y libxkbcommon-dev libwayland-dev libasound2-dev pkg-config libdbus-1-dev libfuse2
 
       - name: Build release
         run: cargo build --release
 
       - name: Install cargo-packager
-        run: cargo install cargo-packager
+        run: |
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install.sh | sh
+          cargo binstall cargo-packager -y
 
       - name: Package Linux
-        run: cargo packager --release --formats deb,appimage
+        run: cargo packager --release --formats deb,appimage --no-build
 
       - name: Stage artifacts
         run: |
@@ -51,16 +53,20 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install NSIS
-        run: choco install nsis -y
+        run: |
+          choco install nsis -y
+          echo "C:\Program Files (x86)\NSIS" >> $GITHUB_PATH
 
       - name: Install cargo-packager
-        run: cargo install cargo-packager
+        run: |
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install.sh | sh
+          cargo binstall cargo-packager -y
 
       - name: Build release
         run: cargo build --release
 
       - name: Package Windows installer
-        run: cargo packager --release --formats nsis
+        run: cargo packager --release --formats nsis --no-build
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -80,10 +86,12 @@ jobs:
         run: cargo build --release
 
       - name: Install cargo-packager
-        run: cargo install cargo-packager
+        run: |
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install.sh | sh
+          cargo binstall cargo-packager -y
 
       - name: Package macOS
-        run: cargo packager --release --formats dmg
+        run: cargo packager --release --formats dmg --no-build
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
