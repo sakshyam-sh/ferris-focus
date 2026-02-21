@@ -40,4 +40,5 @@ priority = "optional"
 assets = [
     ["target/release/ferris-focus", "/usr/bin/ferris-focus", "755"],
     ["ferris-focus.desktop", "/usr/share/applications/ferris-focus.desktop", "644"],
+    ["assets/icon.png", "/usr/share/icons/hicolor/256x256/apps/ferris-focus.png", "644"],
 ]

@@ -58,7 +58,9 @@ jobs:
         run: choco install nsis -y
 
       - name: Package with NSIS
-        run: makensis installer.nsi
+        run: |
+          echo "C:\Program Files (x86)\NSIS" >> $GITHUB_PATH
+          makensis installer.nsi
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
