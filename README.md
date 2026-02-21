@@ -15,27 +15,32 @@ A lightweight, gamified Pomodoro timer built in Rust with Iced.
 
 ### From binary (easiest)
 
-Download the latest binary for your platform from [Releases](https://github.com/sakshyam-sh/ferris-focus/releases):
+Download the latest version for your platform from [Releases](https://github.com/sakshyam-sh/ferris-focus/releases):
 
-| Platform | File |
-|---|---|
-| Linux | `ferris-focus-linux` |
-| macOS (Apple Silicon) | `ferris-focus-macos` |
-| Windows | `ferris-focus.exe` |
-| Debian/Ubuntu | `ferris-focus_0.1.0-1_amd64.deb` |
+| Platform | Format | Instructions |
+|---|---|---|
+| **Windows** | `.exe` | Standard NSIS installer + uninstaller |
+| **Linux (Debian/Ubuntu)** | `.deb` | `sudo dpkg -i ferris-focus_*.deb` |
+| **Linux (Everywhere)** | `.AppImage` | `chmod +x *.AppImage && ./*.AppImage` |
+| **macOS** | `.dmg` | Standard disk image |
 
-**Linux / macOS:**
-```bash
-chmod +x ferris-focus-linux   # or ferris-focus-macos
-./ferris-focus-linux
-```
-
-**Windows:** just double-click `ferris-focus.exe`.
+### Linux Installation Details
 
 **Debian/Ubuntu:**
 ```bash
-sudo dpkg -i ferris-focus_0.1.0-1_amd64.deb
+sudo dpkg -i ferris-focus_0.1.0_amd64.deb
 ferris-focus
+```
+
+**AppImage:**
+```bash
+chmod +x Ferris_Focus_0.1.0_amd64.AppImage
+./Ferris_Focus_0.1.0_amd64.AppImage
+```
+
+**Uninstall (Debian):**
+```bash
+sudo apt remove ferris-focus
 ```
 
 ### From source

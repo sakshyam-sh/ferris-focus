@@ -35,7 +35,16 @@ copyright = "Copyright (c) 2025 sakshyam-sh"
 category = "Utility"
 description = "A gamified Pomodoro timer"
 long-description = "A lightweight, gamified Pomodoro timer with Focus Streaks & XP"
+authors = ["sakshyam-sh <sakshyam@example.com>"]
 publisher = "sakshyam-sh"
 
 [package.metadata.packager.nsis]
 
+[package.metadata.packager.deb]
+depends = ["libasound2", "libdbus-1-3"]
+desktop-file = "ferris-focus.desktop"
+
+[package.metadata.packager.appimage]
+
+[package.metadata.packager.macos]
+minimum-system-version = "11.0"
