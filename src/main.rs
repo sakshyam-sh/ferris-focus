@@ -541,7 +541,8 @@ fn view_stats(app: &App) -> Element<'_, Message> {
 }
 
 fn view_weekly_heatmap(app: &App) -> Element<'_, Message> {
-    let today = Local::now().date_naive();
+    let now = Local::now();
+    let today = now.date_naive();
     let days: Vec<NaiveDate> = (0..7)
         .rev()
         .map(|i| today - chrono::Duration::days(i))
@@ -564,8 +565,8 @@ fn view_weekly_heatmap(app: &App) -> Element<'_, Message> {
             let label = day_labels[weekday_idx];
 
             column![
-                Canvas::new(HeatmapCell { count }).width(40).height(40),
-                text(label).size(11),
+                Canvas::new(HeatmapCell { count }).width(32).height(32),
+                text(label).size(10),
             ]
             .spacing(4)
             .align_x(Center)
@@ -573,7 +574,7 @@ fn view_weekly_heatmap(app: &App) -> Element<'_, Message> {
         })
         .collect();
 
-    let mut heatmap_row = row![].spacing(6);
+    let mut heatmap_row = row![].spacing(4);
     for b in boxes {
         heatmap_row = heatmap_row.push(b);
     }
