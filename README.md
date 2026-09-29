@@ -6,7 +6,7 @@ A lightweight, gamified Pomodoro timer built in Rust with Iced.
 
 - **Pomodoro Timer** — 25/5/15 min focus/break cycles with a circular progress ring
 - **Focus Streaks & XP** — earn XP for completing sessions, build daily streaks, level up Ferris
-- **Ferris Evolution** — watch Ferris grow: 🥚 → 🐣 → 🦀 → ⭐ → 👑
+- **Ferris Evolution** — watch Ferris grow
 - **Stats Dashboard** — daily/all-time stats, weekly session heatmap
 - **Desktop Notifications** — alerts when sessions complete
 - **Persistent** — SQLite storage, your progress survives restarts
